@@ -567,15 +567,19 @@ The order and grouping of parameters in `*_nibs.tsv` reflect a hierarchical orga
 **Stimulation Timing Parameters** (Nigel suggestion - not finished as of 30/1/02026
 | Field | Type | Description |
 |---|---:|---|
-| `pulse_duration` | number | (Optional) time during which current is passed through the TMS coil (also called `pulse width`). |
-| `pulse_count` | number | (Optional) Number of pulses indicated by an event (*I think this definition needs tightening*). |
-| `pulse_repetition_interval` | number | (Optional) time from the onset of the first pulse to the onset of the subsequent pulse. This includes pulse duration plus time between pulses. |
-| `train_duration` | number | (Optional) Time to complete all pulses in train (including interval following final pulse). |
-| `train_count` | number | (Optional) Number of trains indicated by an event. |
-| `train_repeition_interval` | number | (Optional) Time from the onset of the first train to the onset of the subsequent train. |
-| `repeat_duration` | number | (Optional) Time to complete all trains in repeat (including interval after final train).|
-| `repeat_count` | number | (Optional) Number of repeats indicated by an event. |
-| `repeat_repeition_interval` | number | (Optional) Time from the onset of the first repeat to the onset of the subsequent repeat. |
+| `pulse_duration` | number | (RECOMMENDED) time during which current is passed through the TMS coil (also called `pulse width`). |
+| `pulse_count` | number | (RECOMMENDED) Number of pulses indicated by an event (*I think this definition needs tightening*). |
+| `pulse_repetition_interval` | number | (REQUIRED if `pulse_count` > 2) time from the onset of the first pulse to the onset of the subsequent pulse. This includes pulse duration plus time between pulses. |
+| `train_count` | number | (RECOMMENDED if applicable) Number of trains indicated by an event. |
+| `train_repeition_interval` | number | (REQUIRED if `train_count` > 2) Time from the onset of the first train to the onset of the subsequent train. |
+| `repeat_count` | number | (ORECOMMENDED if applicable) Number of repeats indicated by an event. |
+| `repeat_repeition_interval` | number | (REQUIRED if `repeat_count` > 2) Time from the onset of the first repeat to the onset of the subsequent repeat. |
+| `repeat<index>_count` | number | (RECOMMENDED if applicable) Number of nested repeats indicated by an event. |
+| `repeat<index>_repeition_interval` | number | (REQUIRED if `repeat<index>_count` > 2)) Time from the onset of the first nested repeat to the onset of the subsequent repeat. |
+| `train_duration` | number | (Optional) Time to complete all pulses in train (including interval following final pulse). Calculated by `pulse_count` * `pulse_repetition_interval`. |
+| `repeat_duration` | number | (Optional) Time to complete all trains in repeat (including interval after final train). Calculated by `train_count` * `train_repetition_interval`. |
+| `pulse_repetition_frequency` | number | (Optional) Frequency of pulse repetitions. Calculated by 1 / `pulse_repetition_interval`. |
+| `train_repetition_frequency` | number | (Optional) Frequency of train repetitions. Calculated by 1 / `train_repetition_interval`. |
 | `train_ramp_up` | number | (Optional) Gradual increase of stimulation amplitude applied across successive trains at the beginning of a stimulation block (train-to-train ramping). |
 | `train_ramp_up_number` | number | (Optional) Number of initial trains over which the ramp-up is applied. |
 | `train_ramp_down` | number | (Optional) Gradual decrease of stimulation amplitude applied across successive trains at the end of a stimulation block (train-to-train ramping). |
