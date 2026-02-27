@@ -274,8 +274,9 @@ Stores stimulation target coordinates and optional coil's orientation informatio
 | Field | Type | Description |
 |---|---|---|
 | `target_id` | string | `target_id` identifies a stimulation target at the stimulation level. A target MAY be represented by a single point (one row) or by multiple points (multiple rows) sharing the same `target_id`. |
-| `target_part` | integer | (Optional) Index of a point within a composite target sharing the same `target_id`. REQUIRED when a `target_id` corresponds to multiple rows in `*_markers.tsv`; OPTIONAL otherwise. Values SHOULD start at 1 and increment monotonically (1..N). (For typical TMS targets represented by a single point, `target_part` is usually not required.) |
-| `target_name` | string | (Optional) Name of the cortical target, anatomical label, or stimulation site (purely human-readable label such as: M1_hand, DLPFC, etc.). |
+| `target_part` | integer | (Optional) Index of a point within a composite target sharing the same `target_id`. REQUIRED when a `target_id` corresponds to multiple rows in `*_markers.tsv`; OPTIONAL otherwise. Values SHOULD start at 1 and increment monotonically (1..N). (For typical TMS targets represented by a single point (stimulation with one coil), `target_part` is usually not required.) |
+| `target_label` | string | (Optional) Short human-readable label for the stimulation target. Intended for standardized target naming when available (e.g., 10–20 position labels such as `C3`, `F3`, `Cz`, or common anatomical/site labels such as `M1_hand`, `DLPFC`). Interpretation is in the coordinate context defined by `*_coordsystem.json`. |
+| `target_description` | string | (Optional) Free-form description of the stimulation target (e.g., anatomical location, rationale, landmark-based description, or notes on how the target was selected). Interpretation is in the coordinate context defined by `*_coordsystem.json` when coordinate-system conventions apply (e.g., 10–20 naming). |
 | `peeling_depth` | number | (Optional) Depth/distance from cortex surface to the target point OR from the entry marker to the target marker. |
 | `target_x` | number | X-coordinate of the target point in millimeters. |
 | `target_y` | number | Y-coordinate of the target point in millimeters. |
@@ -418,9 +419,8 @@ Each entry describes the stimulation instance in terms of the number of physical
 | `PulseIntensityScalingVector` | array[number] | Vector of scaling coefficients, ordered by pulse occurrence within the stimulation instance. Length MUST match `StimulusPulsesNumber`. |
 | `PulseIntensityScalingReference` | string | Specifies which per-event intensity field in `*_nibs.tsv` is used as the reference for applying `PulseIntensityScalingVector` when pulse-specific intensities differ within an instance. Allowed values: `base`, `threshold`. |
 | `PulseIntensityScalingDescription` | string | Free-form description clarifying how scaling is applied and how pulse order is defined for the stimulation instance. |
-| `PulseCurrentDirection` | string | Direction of the induced current for the stimulation pulse (e.g., normal, reverse). Interpretation depends on the stimulator/coil and device conventions. Defined per `StimID`. |
-| `PulseCurrentDirectionDescription` | string | Free-form description specifying how `PulseCurrentDirection` is defined and interpreted for the given stimulator and coil configuration (e.g., polarity convention, manufacturer definition). |
-
+| `PulseCurrentDirection` | string | (Optional) Vendor-defined coil current direction / polarity setting for the pulse (e.g., `normal`, `reverse`). This field refers to the direction of current flow in the coil as defined by the stimulator/coil system and MUST NOT be interpreted as the induced cortical current direction in tissue. |
+| `PulseCurrentDirectionDescription` | string | (Optional) Free-form description of how `PulseCurrentDirection` is defined for this stimulator/coil (e.g., manufacturer convention, reference orientation, polarity definition). |
 
 #### `StimulusSet` description example
 
@@ -473,6 +473,7 @@ When the `stimsys-<label>` entity is used in a `*_nibs.*` filename, the correspo
 - **Recommended convention:** `StimulationSystem` SHOULD start with the exact `stimsys` label (filename-friendly), optionally followed by a more descriptive name.
 
 Examples:
+
 - filename entity: `stimsys-tms` → `"StimulationSystem": "tms (Transcranial Magnetic Stimulation)"`
 - filename entity: `stimsys-tes` → `"StimulationSystem": "tes (Transcranial Electrical Stimulation)"`
 
@@ -540,20 +541,29 @@ This section describes all possible fields that may appear in `*_nibs.tsv` files
 The order and grouping of parameters in `*_nibs.tsv` reflect a hierarchical organization of stimulation metadata, progressing from device and configuration parameters, through event indexing, to spatial targeting and derived measures. This structure supports both manual and automated data acquisition scenarios.
 
 
-**Stimulator Device & Coil Configuration**
+**Coil Configuration**
 
 | Field | Type | Description |
 |---|---:|---|
 | `coil_id` | string | Coil identifier. References `CoilID` entries in `CoilSet` within `*_nibs.json`. |
-| `coil_positioning_method` | string | (Optional) Method used to guide coil positioning (free-form). Recommended values include: `manual`, `fixed`, `cobot`, `robot`. |
 
+**Non-navigated coil placement/orientation (optional)**
+
+These fields support studies without neuronavigation, where coil placement and orientation are recorded using conventional verbal descriptions. They are intended for event-level documentation and MAY vary across rows in `*_nibs.tsv`.
+
+| Field | Type | Description |
+|---|---:|---|
+| `coil_positioning_method` | string | (Optional) Method used to guide coil positioning (free-form). Recommended values include: `manual`, `fixed`, `cobot`, `robot`. |
+| `coil_handle_direction` | string | (Optional) Free-form coplanar coil handle direction description (e.g., “handle posterior”, “45° posterolateral”). |
+| `coil_placement_description` | string | (Optional) Free-form description of coil placement/orientation relative to anatomical landmarks or conventions used in the study. |
+| `coil_orientation_code` | string | (Optional) Short structured orientation code when a local convention exists (free-form but recommended to use a limited set within a dataset: “PA”, “AP”, “LM”, “ML”). |
 
 **Protocol / Event Metadata**
 
 | Field | Type | Description |
 |---|---:|---|
-| `protocol_name` | string | (Optional) Human-readable protocol label (e.g., SICI, LICI, custom). Intended for readability; MUST NOT be used for machine linkage. |
 | `event_id` | string | Identifier of a single logical stimulation event. Used for linkage to time-locked annotations in `*_events.tsv`. MUST be unique within a given `*_nibs.tsv` file. |
+| `event_name` | string | (Optional) Human-readable protocol label (e.g., SICI, LICI, custom). Intended for readability; MUST NOT be used for machine linkage. |
 | `event_part` | integer | (Optional) Index disambiguating multiple `*_nibs.tsv` rows that belong to the same `event_id` when a single logical event must be split into multiple configuration segments. MUST be present when more than one row shares the same `event_id`. For a given `event_id`, `event_part` MUST be unique. Recommended values are 1..N. |
 
 
@@ -576,11 +586,7 @@ The order and grouping of parameters in `*_nibs.tsv` reflect a hierarchical orga
 | `repeat_duration` | number | (Optional) Time to complete all trains in repeat (including interval after final train).|
 | `repeat_count` | number | (Optional) Number of repeats indicated by an event. |
 | `repeat_repeition_interval` | number | (Optional) Time from the onset of the first repeat to the onset of the subsequent repeat. |
-| `train_ramp_up` | number | (Optional) Gradual increase of stimulation amplitude applied across successive trains at the beginning of a stimulation block (train-to-train ramping). |
-| `train_ramp_up_number` | number | (Optional) Number of initial trains over which the ramp-up is applied. |
-| `train_ramp_down` | number | (Optional) Gradual decrease of stimulation amplitude applied across successive trains at the end of a stimulation block (train-to-train ramping). |
-| `train_ramp_down_number` | number | (Optional) Number of final trains over which the ramp-down is applied. |
-| `stimulation_duration` | number | (Optional) Total wall-clock duration of the stimulation block. |
+
 
 | Field | Type | Description |
 |---|---:|---|
